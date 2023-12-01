@@ -1,0 +1,17 @@
+*[_type=="offices"] {
+  "country": country[_key == "english" || _key == $lang] {
+    "lang": _key, 
+    value
+  },
+  "responsibilities": responsibilities[].responsibility
+    [_key == "english" || _key == $lang] {
+      "lang": _key, 
+      value
+  },
+  "city": city[_key == "english" || _key == $lang] {
+    "lang": _key,
+    value
+  },
+  street,
+  houseNumber
+}
