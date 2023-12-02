@@ -77,7 +77,11 @@ module.exports = grammar({
     string: () => token(seq('"', /[\w]*?/, '"')),
 
     pair: ($) =>
-      seq(field("key", $.string), ":", field("value", $.expression_identifier)),
+      seq(
+        field("key", $.string),
+        ":",
+        field("value", choice($.expression_identifier, $.normal_identifier)),
+      ),
 
     object: ($) =>
       seq(
