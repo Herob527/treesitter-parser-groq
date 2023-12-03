@@ -4,9 +4,10 @@
   "description": "",
   "main": "bindings/node",
   "scripts": {
-    "build": "tree-sitter generate && node-gyp build",
-    "lint": "eslint grammar.js",
-    "start": "nodemon --exec 'npm run build' --watch grammar.js",
+    "build:prod": "tree-sitter generate && node-gyp build",
+    "build:dev": "tree-sitter generate && tree-sitter parse test.groq",
+    "lint": "eslint --fix --ext .js ./grammar.js",
+    "start": "nodemon --exec 'npm run build:prod' --watch grammar.js",
     "parse": "tree-sitter parse",
     "test": "tree-sitter test && script/parse-examples",
     "test-windows": "tree-sitter test"
@@ -14,13 +15,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "nan": "^2.18.0"
+    "nan": "^2.18.0",
+    "node-gyp": "^10.0.1",
+    "tree-sitter-cli": "^0.20.8"
   },
   "devDependencies": {
+    "prettier": "^3.1.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "@stylistic/eslint-plugin": "^1.4.1",
     "eslint": "^8.54.0",
-    "tree-sitter-cli": "^0.20.8",
-    "node-gyp": "^10.0.1",
-    "eslint-config-google": "^0.14.0"
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^9.1.0"
   },
   "tree-sitter": [
     {
