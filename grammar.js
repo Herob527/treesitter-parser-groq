@@ -27,7 +27,7 @@ function commaSep(rule) {
 }
 module.exports = grammar({
   name: "groq",
-
+  extras: ($) => [$.comment, /[\s\p{Zs}\uFEFF\u2028\u2029\u2060\u200B]/],
   rules: {
     query: ($) =>
       seq(
@@ -42,12 +42,33 @@ module.exports = grammar({
             $.expression,
             $.string,
             $.fields_block,
+            $.comment,
           ),
         ),
       ),
 
     dot: () => token("."),
     arrow: () => token("->"),
+    reference: () => token("@"),
+
+    comment: (_) =>
+      token(
+        choice(
+          seq("//", /.*/),
+          seq("/*", /[^*]*\*+([^/*][^*]*\*+)*/, "/"),
+          // https://tc39.es/ecma262/#sec-html-like-comments
+          seq("<!--", /.*/),
+          // This allows code to exist before this token on the same line.
+          //
+          // Technically, --> is supposed to have nothing before it on the same line
+          // except for comments and whitespace, but that is difficult to express,
+          // and in general tree sitter grammars tend to prefer to be overly
+          // permissive anyway.
+          //
+          // This approach does not appear to cause problems in practice.
+          seq("-->", /.*/),
+        ),
+      ),
 
     fields_block: ($) =>
       seq(
@@ -115,7 +136,7 @@ module.exports = grammar({
 
     expression_element: ($) =>
       seq(
-        choice($.underscore_identifier, $.identifier),
+        choice($.underscore_identifier, $.identifier, $.reference),
         $.comparision_operator,
         choice($.variable_identifier, $.string),
       ),
