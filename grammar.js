@@ -33,76 +33,111 @@ module.exports = grammar({
       seq(
         repeat(
           choice(
+            $.asterisk,
+            $.underscore_identifier,
             $.variable_identifier,
-            $.normal_identifier,
-            $.operator,
-            $.every,
+            $.pair,
+            $.identifier,
+            $.expression_condition,
+            $.expression,
             $.string,
-            $.expression_identifier,
-            $.array_identifier,
-            $.object,
+            $.fields_block,
           ),
         ),
       ),
 
-    array_identifier: (_) => {
-      const alpha = /[_a-zA-Z]+?/;
+    dot: () => token("."),
+    arrow: () => token("->"),
+
+    fields_block: ($) =>
+      seq(
+        "{",
+        repeat(
+          commaSep1(
+            choice($.pair, choice($.identifier, $.underscore_identifier)),
+          ),
+        ),
+        "}",
+      ),
+
+    asterisk: ($) => token("*"),
+
+    underscore_identifier: (_) => {
+      const alpha = /[a-zA-Z]+?/;
       const alphanumeric = /[_a-zA-Z\d]+?/;
-      return token(seq(alpha, repeat(alphanumeric), "[]"));
+      return token(seq("_", alpha, repeat(alphanumeric)));
     },
 
     variable_identifier: (_) => {
-      const alpha = /[_a-zA-Z]+?/;
+      const alpha = /[a-zA-Z]+?/;
       const alphanumeric = /[_a-zA-Z\d]+?/;
       return token(seq("$", alpha, repeat(alphanumeric)));
     },
 
-    normal_identifier: ($) => {
-      const alpha = /[_a-zA-Z]+?/;
+    identifier: ($) => {
+      const alpha = /[a-zA-Z]+?/;
       const alphanumeric = /[_a-zA-Z\d]+?/;
       return token(
         seq(
           "",
           alpha,
           repeat(alphanumeric),
-          optional(seq(".", alpha, repeat(alphanumeric))),
+          optional(seq(token(choice(".", "->")), alpha, repeat(alphanumeric))),
+          optional(token(",")),
         ),
       );
     },
+    null: () => token("null"),
 
-    operator: (_) => token(choice("==", "||", "&&", "matches", "!=", "[]")),
-
-    every: () => token("*"),
-
-    string: () => token(seq('"', /[\w]*?/, '"')),
+    string: (_) => seq('"', /[\w]*/, '"'),
 
     pair: ($) =>
-      seq(
-        field("key", $.string),
-        ":",
-        field("value", choice($.expression_identifier, $.normal_identifier)),
-      ),
-
-    object: ($) =>
-      seq(
-        "{",
-        commaSep(
-          optional(choice($.pair, $.normal_identifier, $.array_identifier)),
+      prec.left(
+        2,
+        seq(
+          field("key", $.string),
+          ":",
+          field(
+            "value",
+            choice($.expression, $.identifier, $.underscore_identifier),
+          ),
+          optional(token(",")),
         ),
-        "}",
       ),
 
-    expression_identifier: ($) =>
-      seq(choice($.normal_identifier, $.every), $.expression),
+    // Expression
+    comparision_operator: ($) =>
+      token(choice("==", ">", ">=", "<", "<=", "!=", "in", "matches")),
+
+    boolean_operator: ($) => token(choice("||", "&&")),
+
+    empty_expression: ($) => seq($.underscore_identifier, $.identifier, "[]"),
 
     expression_element: ($) =>
       seq(
-        $.normal_identifier,
-        $.operator,
+        choice($.underscore_identifier, $.identifier),
+        $.comparision_operator,
         choice($.variable_identifier, $.string),
-        choice($.operator, ""),
       ),
 
-    expression: ($) => seq("[", repeat1($.expression_element), "]"),
+    expression_condition: ($) =>
+      seq(
+        choice($.underscore_identifier, $.identifier, $.asterisk),
+        seq(
+          "[",
+          repeat(seq($.expression_element, optional($.boolean_operator))),
+          "]",
+        ),
+      ),
+    expression: ($) =>
+      prec.left(
+        1,
+        seq(
+          $.expression_condition,
+          choice(" ", ".", "->"),
+          $.fields_block,
+          optional(","),
+        ),
+      ),
   },
 });
