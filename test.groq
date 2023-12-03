@@ -33,3 +33,38 @@
 *[count((categories[]->slug.current)[@ in ["action", "thriller"]]) > 0] // documents that reference categories with slugs of "action" or "thriller"
 *[count((categories[]->slug.current)[@ in ["action", "thriller"]]) == 2] // documents that reference categories with slugs of "action" and "thriller"
   // set == 2 based on the total number of items in the array
+// order results
+*[_type == "movie"] | order(_createdAt asc)
+
+// order results by multiple attributes
+*[_type == "movie"] | order(releaseDate desc) | order(_createdAt asc)
+
+// order todo items by descending priority,
+// where priority is equal, list most recently updated
+// item first
+*[_type == "todo"] | order(priority desc, _updatedAt desc) 
+
+// the single, oldest document
+*[_type == "movie"] | order(_createdAt asc)[0]
+
+// the single, newest document
+*[_type == "movie"] | order(_createdAt desc)[0]
+
+// oldest 10 documents
+*[_type == "movie"] | order(_createdAt asc)[0..9]
+
+// BEWARE! This selects 10 documents using the default
+// ordering, and *only the selection* is ordered by
+// _createdAt in ascending order
+*[_type == "movie"][0..9] | order(_createdAt asc)
+
+// limit/offset using external params (see client documentation)
+*[_type == "movie"] | order(_createdAt asc) [$start..$end]
+
+// order results alphabetically by a string field
+// This is case sensitive, so A-Z come before a-z
+*[_type == "movie"] | order(title asc)
+
+// order results alphabetically by a string field,
+// ignoring case
+*[_type == "movie"] | order(lower(title) asc)
