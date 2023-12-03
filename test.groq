@@ -1,17 +1,35 @@
-*[_type=="offices"] {
-  "country": country[_key == "english" || _key == $lang] {
-    "lang": _key, 
-    value
-  },
-  "responsibilities": responsibilities[].responsibility
-    [_key == "english" || _key == $lang] {
-      "lang": _key, 
-      value
-  },
-  "city": city[_key == "english" || _key == $lang] {
-    "lang": _key,
-    value
-  },
-  street,
-  houseNumber
-}
+* // Everything, i.e. all documents
+*[] // Everything with no filters applied, i.e. all documents
+*[_type == "movie"] // All movie documents
+*[_id == "abc.123"] // _id equals
+*[_type in ["movie", "person"]] // _type is movie or person
+*[_type == "movie" && popularity > 15 && releaseDate > "2016-04-25"] // multiple filters AND
+*[_type == "movie" && (popularity > 15 || releaseDate > "2016-04-25")] // multiple filters OR
+*[popularity < 15] // less than
+*[popularity > 15] // greater than
+*[popularity <= 15] // less than or equal
+*[popularity >= 15] // greater than or equal
+*[popularity == 15]
+*[releaseDate != "2016-04-27"] // not equal
+*[!(releaseDate == "2016-04-27")] // not equal
+*[!(releaseDate != "2016-04-27")] // even equal via double negatives "not not equal"
+*[dateTime(_updatedAt) > dateTime('2018-04-20T20:43:31Z')] // Use zulu-time when comparing datetimes to strings
+*[dateTime(_updatedAt) > dateTime(now()) - 60*60*24*7] // Updated within the past week
+*[name < "Baker"] // Records whose name precedes "Baker" alphabetically
+*[awardWinner == true] // match boolean
+*[awardWinner] // true if awardWinner == true
+*[!awardWinner] // true if awardWinner == false
+*[defined(awardWinner)] // has been assigned an award winner status (any kind of value)
+*[!defined(awardWinner)] // has not been assigned an award winner status (any kind of value)
+*[title == "Aliens"]
+*[title in ["Aliens", "Interstellar", "Passengers"]]
+*[_id in path("a.b.c.*")] // _id matches a.b.c.d but not a.b.c.d.e
+*[_id in path("a.b.c.**")] // _id matches a.b.c.d, and also a.b.c.d.e.f.g, but not a.b.x.1
+*[!(_id in path("drafts.**"))] // _id matches anything that is not under the drafts-path
+*["yolo" in tags] // documents that have the string "yolo" in the array "tags"
+*[status in ["completed", "archived"]] // the string field status is either == "completed" or "archived"
+*["person_sigourney-weaver" in castMembers[].person._ref] // Any document having a castMember referencing sigourney as its person
+*[slug.current == "some-slug"] // nested properties
+*[count((categories[]->slug.current)[@ in ["action", "thriller"]]) > 0] // documents that reference categories with slugs of "action" or "thriller"
+*[count((categories[]->slug.current)[@ in ["action", "thriller"]]) == 2] // documents that reference categories with slugs of "action" and "thriller"
+  // set == 2 based on the total number of items in the array
