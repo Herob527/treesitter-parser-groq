@@ -31,12 +31,15 @@
     {
       "scope": "source.groq",
       "file-types": [
-        "groq"
+        "groq",
+        "typescript",
+        "astro",
+        "javascript"
       ],
       "highlights": [
         "queries/highlights.scm"
       ],
-      "injection-regex": "^(groq)$"
+      "injection-regex": "/* groq */"
     }
   ]
 }
