@@ -1,0 +1,3 @@
+*[_type == "test" && !(_type !="test")] {
+  "test": [_type == "test"].test
+}

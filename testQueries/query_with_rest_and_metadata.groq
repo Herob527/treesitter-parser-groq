@@ -1,0 +1,12 @@
+
+*[_type=="post" && slug == $slug] { 
+    page[] {
+      ...,
+      "imageMetadata":image.imageResource.asset->{
+        metadata { 
+          lqip, 
+          dimensions
+        } 
+      }
+  } 
+}
