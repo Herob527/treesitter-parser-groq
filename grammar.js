@@ -27,6 +27,11 @@ function commaSep(rule) {
 }
 module.exports = grammar({
   name: "groq",
+  conflicts: ($) => [
+    [$.query, $.expression],
+    [$.expression],
+    [$.query, $.expression_condition],
+  ],
   extras: ($) => [$.comment, /[\s\p{Zs}\uFEFF\u2028\u2029\u2060\u200B]/],
   rules: {
     query: ($) =>
@@ -34,55 +39,45 @@ module.exports = grammar({
         repeat(
           choice(
             $.asterisk,
+            $.empty_expression,
             $.underscore_identifier,
             $.variable_identifier,
             $.pair,
             $.identifier,
-            $.expression_condition,
             $.expression,
             $.string,
             $.fields_block,
             $.comment,
+            $.rest,
           ),
         ),
       ),
 
-    dot: () => token("."),
-    arrow: () => token("->"),
     reference: () => token("@"),
-
+    rest: () => token("..."),
     comment: (_) =>
       token(
-        choice(
-          seq("//", /.*/),
-          seq("/*", /[^*]*\*+([^/*][^*]*\*+)*/, "/"),
-          // https://tc39.es/ecma262/#sec-html-like-comments
-          seq("<!--", /.*/),
-          // This allows code to exist before this token on the same line.
-          //
-          // Technically, --> is supposed to have nothing before it on the same line
-          // except for comments and whitespace, but that is difficult to express,
-          // and in general tree sitter grammars tend to prefer to be overly
-          // permissive anyway.
-          //
-          // This approach does not appear to cause problems in practice.
-          seq("-->", /.*/),
-        ),
+        choice(seq("//", /.*/), seq("/*", /[^*]*\*+([^/*][^*]*\*+)*/, "/")),
       ),
 
     fields_block: ($) =>
       seq(
         "{",
         repeat(
-          commaSep1(
-            choice($.pair, choice($.identifier, $.underscore_identifier)),
+          seq(
+            choice(
+              $.pair,
+              choice($.identifier, $.underscore_identifier),
+              $.rest,
+            ),
+            optional(token(",")),
           ),
         ),
         "}",
       ),
 
     asterisk: ($) => token("*"),
-
+    rest: ($) => token("..."),
     underscore_identifier: (_) => {
       const alpha = /[a-zA-Z]+?/;
       const alphanumeric = /[_a-zA-Z\d]+?/;
@@ -100,7 +95,6 @@ module.exports = grammar({
       const alphanumeric = /[_a-zA-Z\d]+?/;
       return token(
         seq(
-          "",
           alpha,
           repeat(alphanumeric),
           optional(seq(token(choice(".", "->")), alpha, repeat(alphanumeric))),
@@ -108,7 +102,6 @@ module.exports = grammar({
         ),
       );
     },
-    null: () => token("null"),
 
     string: (_) => seq('"', /[\w]*/, '"'),
 
@@ -132,18 +125,22 @@ module.exports = grammar({
 
     boolean_operator: ($) => token(choice("||", "&&")),
 
-    empty_expression: ($) => seq($.underscore_identifier, $.identifier, "[]"),
+    empty_expression: ($) =>
+      seq(choice($.underscore_identifier, $.identifier), "[]"),
 
     expression_element: ($) =>
       seq(
+        optional(token("!")),
+        optional(token("(")),
         choice($.underscore_identifier, $.identifier, $.reference),
         $.comparision_operator,
         choice($.variable_identifier, $.string),
+        optional(token(")")),
       ),
 
     expression_condition: ($) =>
       seq(
-        choice($.underscore_identifier, $.identifier, $.asterisk),
+        optional(choice($.underscore_identifier, $.identifier, $.asterisk)),
         seq(
           "[",
           repeat(seq($.expression_element, optional($.boolean_operator))),
@@ -151,14 +148,15 @@ module.exports = grammar({
         ),
       ),
     expression: ($) =>
-      prec.left(
-        1,
-        seq(
-          $.expression_condition,
-          choice(" ", ".", "->"),
-          $.fields_block,
-          optional(","),
+      seq(
+        repeat1(
+          seq(
+            $.expression_condition,
+            optional(choice(token("."), token("->"))),
+          ),
         ),
+        optional($.fields_block),
+        optional(","),
       ),
   },
 });
