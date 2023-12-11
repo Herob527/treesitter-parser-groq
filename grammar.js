@@ -55,7 +55,9 @@ module.exports = grammar({
 
     reference: () => token("@"),
     rest: () => token("..."),
-    comment: (_) =>
+    asterisk: () => token("*"),
+
+    comment: () =>
       token(
         choice(seq("//", /.*/), seq("/*", /[^*]*\*+([^/*][^*]*\*+)*/, "/")),
       ),
@@ -76,8 +78,6 @@ module.exports = grammar({
         "}",
       ),
 
-    asterisk: ($) => token("*"),
-    rest: ($) => token("..."),
     underscore_identifier: (_) => {
       const alpha = /[a-zA-Z]+?/;
       const alphanumeric = /[_a-zA-Z\d]+?/;
@@ -93,14 +93,7 @@ module.exports = grammar({
     identifier: ($) => {
       const alpha = /[a-zA-Z]+?/;
       const alphanumeric = /[_a-zA-Z\d]+?/;
-      return token(
-        seq(
-          alpha,
-          repeat(alphanumeric),
-          optional(seq(token(choice(".", "->")), alpha, repeat(alphanumeric))),
-          optional(token(",")),
-        ),
-      );
+      return token(seq(alpha, repeat(alphanumeric), optional(token(","))));
     },
 
     string: (_) => seq('"', /[\w]*/, '"'),
